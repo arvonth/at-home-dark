@@ -26,10 +26,13 @@ definition(
 
 preferences {
     section("Turn on when Door is opened:") {
-        input "thesensor", "capability.contactSensor", required: true, title: "Where?"
+        input "theSensor", "capability.contactSensor", required: true, title: "Where?"
     }
     section("Turn on this light") {
-        input "theswitch", "capability.switch", required: true
+        input "theSwitch", "capability.switch", required: true
+    }
+    section("Check Presence") {
+        input "myPhone", "capability.presenceSensor", required: true
     }
     section("Zip code") {
         input "zipCode", "text", required: true
@@ -51,8 +54,9 @@ def updated() {
 
 def initialize() {
 	// TODO: subscribe to attributes, devices, locations, etc.
-    subscribe(thesensor, "contact.closed", doorClosedHandler)
-    subscribe(thesensor, "contact.open", doorOpenHandler)
+    subscribe(theSensor, "contact.closed", doorClosedHandler)
+    subscribe(theSensor, "contact.open", doorOpenHandler)
+    subscribe(myPhone,"presence",presenceHandler)
 }
 
 
@@ -64,18 +68,27 @@ def doorOpenHandler(evt) {
     def setTime = s.sunset
     def riseTime = s.sunrise
     def now = new Date()
-    
+
     //Get Current Time and Compare to Sunset Time
     log.debug "Time now $now"
     log.debug "sunset at the location of your hub $setTime"
     log.debug "sunrise at the location of your hub $riseTime"
-    
-    if ( now.after(setTime) ) {
-    	theswitch.on()
+
+    if ( now.after(setTime) && state.presence == false ) {
+    	theSwitch.on()
         log.debug "Switch: ON"
     }
 }
 
 def doorClosedHandler(evt) {
 	log.debug "doorClosedHandler called: $evt"
+}
+
+def presenceHandler(evt) {
+    if (evt.value == "present") {
+        state.presence = true
+     }
+    if (evt.value == "not present") {
+        state.presence = false
+     }
 }
