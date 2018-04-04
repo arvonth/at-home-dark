@@ -17,7 +17,7 @@ definition(
     name: "At Home After Dark",
     namespace: "arvonth",
     author: "Arvont Hill",
-    description: "In general this SmartApp turns on a device when a door opens, but only if it is at or past sunset.",
+    description: "In general this SmartApp turns on a device when I arrive home, but only if it is at or past sunset.",
     category: "Convenience",
     iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
     iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png",
@@ -25,9 +25,6 @@ definition(
 
 
 preferences {
-    section("Turn on when Door is opened:") {
-        input "theSensor", "capability.contactSensor", required: true, title: "Where?"
-    }
     section("Turn on this light") {
         input "theSwitch", "capability.switch", required: true
     }
@@ -54,15 +51,11 @@ def updated() {
 
 def initialize() {
 	// TODO: subscribe to attributes, devices, locations, etc.
-    subscribe(theSensor, "contact.closed", doorClosedHandler)
-    subscribe(theSensor, "contact.open", doorOpenHandler)
     subscribe(myPhone,"presence",presenceHandler)
 }
 
-
-
-def doorOpenHandler(evt) {
-    log.debug "doorOpenHandler called: $evt"
+def presenceHandler(evt) {
+    log.debug "presenceHandler called: $evt"
 
     def s = getSunriseAndSunset(zipCode: zipCode)
     def setTime = s.sunset
@@ -73,22 +66,10 @@ def doorOpenHandler(evt) {
     log.debug "Time now $now"
     log.debug "sunset at the location of your hub $setTime"
     log.debug "sunrise at the location of your hub $riseTime"
+    log.debug "presence is $evt.value"
 
-    if ( now.after(setTime) && state.presence == false ) {
+    if ( now.after(setTime) && evt.value == "present" ) {
     	theSwitch.on()
         log.debug "Switch: ON"
     }
-}
-
-def doorClosedHandler(evt) {
-	log.debug "doorClosedHandler called: $evt"
-}
-
-def presenceHandler(evt) {
-    if (evt.value == "present") {
-        state.presence = true
-     }
-    if (evt.value == "not present") {
-        state.presence = false
-     }
 }
